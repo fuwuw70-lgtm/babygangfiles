@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoteLab — Smart Polling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0f0a;
+    --surface: #141710;
+    --surface2: #1c2018;
+    --border: #2a2e24;
+    --accent: #b8f55a;
+    --accent-dim: #8abf3a;
+    --accent-glow: rgba(184,245,90,0.12);
+    --text: #eeeee8;
+    --text-muted: #7a7d72;
+    --text-dim: #4a4d44;
+    --red: #ff6b6b;
+    --amber: #ffbe3d;
+    --radius: 12px;
+    --radius-lg: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 10%, rgba(184,245,90,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 80%, rgba(184,245,90,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    background: rgba(12,15,10,0.7);
+    position: sticky;
+    top: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .logo-word {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.7rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .logo-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-bottom: 2px;
+    box-shadow: 0 0 12px var(--accent);
+  }
+
+  .admin-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .admin-btn:hover, .admin-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .admin-btn svg { width: 15px; height: 15px; }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .hero h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 14px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero p {
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 300;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── CONFIG NOTICE ── */
+  .config-notice {
+    background: rgba(255,190,61,0.08);
+    border: 1px solid rgba(255,190,61,0.25);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 40px;
+    font-size: 0.875rem;
+    color: var(--amber);
+    line-height: 1.5;
+  }
+
+  .config-notice strong { color: #ffd07a; }
+
+  .config-notice code {
+    background: rgba(255,190,61,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.8rem;
+  }
+
+  /* ── PANEL (shared card style) ── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-bottom: 24px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .panel-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-title span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(184,245,90,0.2);
+    font-size: 0.9rem;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="datetime-local"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  select option { background: #1c2018; }
+
+  /* ── OPTION ROWS ── */
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .option-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .option-row input { flex: 1; }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+  }
+
+  .icon-btn:hover { border-color: var(--red); color: var(--red); }
+  .icon-btn.add { border-color: var(--border); }
+  .icon-btn.add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0c0f0a;
+  }
+
+  .btn-primary:hover {
+    background: #ceff6e;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(184,245,90,0.25);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.3);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { background: rgba(255,107,107,0.2); }
+
+  .btn-full { width: 100%; }
+
+  /* ── TOGGLE ROW ── */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .toggle-row:last-child { border-bottom: none; }
+
+  .toggle-label { font-size: 0.9rem; }
+  .toggle-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: all 0.2s;
+  }
+
+  .toggle input:checked + .toggle-track {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .toggle input:checked + .toggle-track::after {
+    left: 23px;
+    background: #0c0f0a;
+  }
+
+  /* ── GRID 2-COL ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ── POLLS LIST ── */
+  .polls-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .polls-header h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.8rem;
+    letter-spacing: -0.02em;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .badge-active { background: rgba(184,245,90,0.12); color: var(--accent); border: 1px solid rgba(184,245,90,0.2); }
+  .badge-closed { background: rgba(122,125,114,0.1); color: var(--text-muted); border: 1px solid var(--border); }
+  .badge-scheduled { background: rgba(255,190,61,0.1); color: var(--amber); border: 1px solid rgba(255,190,61,0.2); }
+
+  /* ── POLL CARD ── */
+  .poll-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+    animation: fadeUp 0.35s ease both;
+  }
+
+  .poll-card:hover {
+    border-color: rgba(184,245,90,0.3);
+    transform: translateY(-2px);
+  }
+
+  .poll-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .poll-card-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.2rem;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .poll-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .poll-card-meta span { display: flex; align-items: center; gap: 4px; }
+
+  /* ── POLL DETAIL ── */
+  .poll-detail {
+    display: none;
+  }
+
+  .poll-detail.open { display: block; }
+
+  .poll-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .poll-overlay.open { display: flex; }
+
+  .poll-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.94) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+
+  .modal-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    padding-right: 40px;
+  }
+
+  .modal-desc {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* ── VOTE OPTIONS ── */
+  .vote-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .vote-option:hover { border-color: rgba(184,245,90,0.4); background: rgba(184,245,90,0.04); }
+  .vote-option.selected { border-color: var(--accent); background: rgba(184,245,90,0.08); }
+
+  .vote-option-radio {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vote-option.selected .vote-option-radio {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  .vote-option.selected .vote-option-radio::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #0c0f0a;
+  }
+
+  .vote-option-label { font-size: 0.95rem; }
+
+  /* ── RESULTS BAR ── */
+  .result-item { margin-bottom: 14px; }
+
+  .result-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+
+  .result-pct { color: var(--accent); font-weight: 600; }
+
+  .result-bar-bg {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .result-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    border-radius: 999px;
+    transition: width 0.8s cubic-bezier(0.34,1.2,0.64,1);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.3; }
+  .empty p { font-size: 0.95rem; }
+
+  /* ── AUTH OVERLAY ── */
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(8px);
+  }
+
+  .auth-overlay.open { display: flex; }
+
+  .auth-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    animation: modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .auth-box .lock-icon {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 16px var(--accent));
+  }
+
+  .auth-box h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+
+  .auth-box p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+
+  .auth-error {
+    color: var(--red);
+    font-size: 0.82rem;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  /* ── TOAST ── */
+  .toast-container {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    animation: toastIn 0.3s ease both;
+    max-width: 320px;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .toast-success { background: var(--accent); color: #0c0f0a; }
+  .toast-error { background: var(--red); color: #fff; }
+  .toast-info { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+
+  /* ── NAME INPUT ── */
+  .name-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .name-row input { flex: 1; }
+
+  /* ── SETUP SECTION ── */
+  .setup-section {
+    display: none;
+    margin-bottom: 40px;
+  }
+
+  .setup-section.visible { display: block; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  /* ── ADMIN ACTIONS ── */
+  .admin-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── LOADING ── */
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-polls {
+    text-align: center;
+    padding: 48px;
+    color: var(--text-muted);
+  }
+
+  /* ── VOTER NAME TAG ── */
+  .voter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(184,245,90,0.2);
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-bottom: 16px;
+    cursor: pointer;
+  }
+
+  .voter-tag svg { width: 12px; height: 12px; }
+
+  /* ── DATETIME DISPLAY ── */
+  .deadline-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: var(--amber);
+    background: rgba(255,190,61,0.08);
+    border: 1px solid rgba(255,190,61,0.15);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+
+  .total-votes-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  /* SETUP STEPS */
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+
+  .step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+
+  .step-dot.active { background: var(--accent); width: 20px; border-radius: 3px; }
+
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    <span class="logo-word">VoteLab</span>
+    <div class="logo-dot"></div>
+  </div>
+  <button class="admin-btn" id="adminToggleBtn" onclick="openAuth()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    Admin
+  </button>
+</header>
+
+<!-- ── MAIN ── -->
+<main>
+
+  <!-- SETUP NOTICE -->
+  <div class="config-notice" id="setupNotice">
+    ⚙️ <strong>Setup Required:</strong> This app uses <strong>JSONBin.io</strong> as a free database.
+    <ol style="margin-top:8px;padding-left:18px;line-height:1.8">
+      <li>Go to <strong>jsonbin.io</strong> → sign up free → create a <strong>Bin</strong> with initial content <code>{"polls":[],"votes":{}}</code></li>
+      <li>Copy your <strong>Bin ID</strong> and <strong>API Key</strong> (Master Key or Access Key)</li>
+      <li>Click <strong>Admin</strong> above and enter your password (<code>admin123</code> by default, change it in the code)</li>
+      <li>Paste your Bin ID and API Key in the Admin Setup panel below</li>
+    </ol>
+    <div style="margin-top:8px;color:#ffd07a;font-size:0.8rem">
+      💡 Alternatively: If you change the <code>ADMIN_PASSWORD</code> variable in this file's script, use your chosen password.
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Collect opinions,<br><em>beautifully.</em></h1>
+    <p>Create polls, gather votes, see results in real time — no accounts needed.</p>
+  </div>
+
+  <!-- ADMIN PANEL (hidden until logged in) -->
+  <div class="setup-section" id="adminPanel">
+
+    <!-- CONFIG -->
+    <div class="panel">
+      <div class="panel-title"><span>⚙️</span> JSONBin Configuration</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>JSONBin Bin ID</label>
+          <input type="text" id="cfgBinId" placeholder="6xxxxxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div class="form-group">
+          <label>JSONBin API Key</label>
+          <input type="password" id="cfgApiKey" placeholder="$2a$10$xxxxxxxxxxxxxxxx">
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="saveConfig()">Save Configuration</button>
+    </div>
+
+    <!-- CREATE POLL -->
+    <div class="panel">
+      <div class="panel-title"><span>✦</span> Create New Poll</div>
+
+      <div class="form-group">
+        <label>Poll Question / Title</label>
+        <input type="text" id="pollTitle" placeholder="e.g. Where should we hold the team dinner?">
+      </div>
+
+      <div class="form-group">
+        <label>Description (optional)</label>
+        <textarea id="pollDesc" placeholder="Add context or instructions for voters…"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Poll Type</label>
+        <select id="pollType" onchange="renderOptionFields()">
+          <option value="choice">Multiple Choice</option>
+          <option value="yesno">Yes / No</option>
+          <option value="schedule">Schedule / Date Picker</option>
+          <option value="text">Open Text Response</option>
+        </select>
+      </div>
+
+      <!-- Dynamic option fields -->
+      <div id="optionFields"></div>
+
+      <!-- Settings -->
+      <div class="divider"></div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Show results to voters</div>
+          <div class="toggle-sub">After submitting, voters can see live results</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingShowResults" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Require voter name</div>
+          <div class="toggle-sub">Voters must enter their name before voting</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingRequireName" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Set a deadline</div>
+          <div class="toggle-sub">Automatically close the poll at a specific time</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="settingDeadline" onchange="toggleDeadlineField()">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <div id="deadlineField" style="display:none;margin-top:12px">
+        <label>Poll Closes At</label>
+        <input type="datetime-local" id="pollDeadline">
+      </div>
+
+      <div style="margin-top:24px">
+        <button class="btn btn-primary" onclick="createPoll()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Publish Poll
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- POLLS LIST -->
+  <div class="polls-header">
+    <h2>Active Polls</h2>
+  </div>
+
+  <div id="pollsContainer">
+    <div class="loading-polls">
+      <div class="spinner"></div>
+      <p style="margin-top:14px">Loading polls…</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── VOTE MODAL ── -->
+<div class="poll-overlay" id="voteOverlay" onclick="closeModal(event)">
+  <div class="poll-modal" id="voteModal">
+    <button class="modal-close" onclick="closeVoteModal()">×</button>
+    <div id="voteModalContent"></div>
+  </div>
+</div>
+
+<!-- ── AUTH OVERLAY ── -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <div class="lock-icon">🔐</div>
+    <h2>Admin Access</h2>
+    <p>Enter the admin password to create and manage polls.</p>
+    <div class="form-group">
+      <input type="password" id="authInput" placeholder="Enter password…"
+        onkeydown="if(event.key==='Enter')checkAuth()">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center">
+      <button class="btn btn-ghost" onclick="closeAuthOverlay()">Cancel</button>
+      <button class="btn btn-primary" onclick="checkAuth()">Unlock</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- ── TOAST CONTAINER ── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIGURATION — change ADMIN_PASSWORD here
+// ══════════════════════════════════════════
+const ADMIN_PASSWORD = 'admin123'; // ← Change this!
+
+// ── STATE ──
+let isAdmin = false;
+let polls = [];
+let votesDB = {};
+let binId = localStorage.getItem('vl_bin_id') || '';
+let apiKey = localStorage.getItem('vl_api_key') || '';
+let currentVoterName = localStorage.getItem('vl_voter_name') || '';
+let currentPollId = null;
+let hasVoted = {};
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  renderOptionFields();
+  if (binId && apiKey) {
+    document.getElementById('cfgBinId').value = binId;
+    document.getElementById('cfgApiKey').value = apiKey;
+    document.getElementById('setupNotice').style.display = 'none';
+    loadPolls();
+  } else {
+    renderPolls(); // show empty state
+  }
+});
+
+// ══════════════════════════════════════════
+//  JSONBIN API
+// ══════════════════════════════════════════
+const BASE = 'https://api.jsonbin.io/v3/b';
+
+async function fetchDB() {
+  if (!binId || !apiKey) return null;
+  try {
+    const r = await fetch(`${BASE}/${binId}/latest`, {
+      headers: { 'X-Master-Key': apiKey, 'X-Bin-Meta': 'false' }
+    });
+    if (!r.ok) throw new Error('Fetch failed');
+    return await r.json();
+  } catch (e) {
+    showToast('Could not connect to database. Check your config.', 'error');
+    return null;
+  }
+}
+
+async function updateDB(data) {
+  if (!binId || !apiKey) { showToast('Configure JSONBin first.', 'error'); return false; }
+  try {
+    const r = await fetch(`${BASE}/${binId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': apiKey
+      },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) throw new Error('Update failed');
+    return true;
+  } catch (e) {
+    showToast('Could not save data. Check your config.', 'error');
+    return false;
+  }
+}
+
+async function loadPolls() {
+  const data = await fetchDB();
+  if (!data) { renderPolls(); return; }
+  polls = data.polls || [];
+  votesDB = data.votes || {};
+  renderPolls();
+}
+
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+function saveConfig() {
+  binId = document.getElementById('cfgBinId').value.trim();
+  apiKey = document.getElementById('cfgApiKey').value.trim();
+  if (!binId || !apiKey) { showToast('Enter both Bin ID and API Key.', 'error'); return; }
+  localStorage.setItem('vl_bin_id', binId);
+  localStorage.setItem('vl_api_key', apiKey);
+  document.getElementById('setupNotice').style.display = 'none';
+  showToast('Configuration saved!', 'success');
+  loadPolls();
+}
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function openAuth() {
+  if (isAdmin) { toggleAdminPanel(); return; }
+  document.getElementById('authOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('authInput').focus(), 100);
+}
+
+function closeAuthOverlay() {
+  document.getElementById('authOverlay').classList.remove('open');
+  document.getElementById('authInput').value = '';
+  document.getElementById('authError').textContent = '';
+}
+
+function checkAuth() {
+  const val = document.getElementById('authInput').value;
+  if (val === ADMIN_PASSWORD) {
+    isAdmin = true;
+    closeAuthOverlay();
+    document.getElementById('adminToggleBtn').classList.add('active');
+    document.getElementById('adminToggleBtn').innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 12l2 2 4-4"/><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Admin ✓`;
+    document.getElementById('adminPanel').classList.add('visible');
+    showToast('Admin access granted', 'success');
+  } else {
+    document.getElementById('authError').textContent = 'Incorrect password. Try again.';
+    document.getElementById('authInput').value = '';
+    document.getElementById('authInput').focus();
+  }
+}
+
+function toggleAdminPanel() {
+  const panel = document.getElementById('adminPanel');
+  panel.classList.toggle('visible');
+}
+
+// ══════════════════════════════════════════
+//  DYNAMIC FORM FIELDS
+// ══════════════════════════════════════════
+function renderOptionFields() {
+  const type = document.getElementById('pollType').value;
+  const el = document.getElementById('optionFields');
+
+  if (type === 'choice') {
+    el.innerHTML = `
+      <div class="form-group">
+        <label>Options</label>
+        <div class="options-list" id="optionsList">
+          <div class="option-row"><input type="text" placeholder="Option 1"><button class="icon-btn" onclick="removeOption(this)">×</button></div>
+          <div class="option-row"><input type="text" placeholder="Option 2"><button class="icon-btn" onclick="removeOption(this)">×</button></div>
+        </div>
+        <button class="icon-btn add" onclick="addOption()" style="width:auto;padding:0 14px;gap:6px;font-size:0.85rem">
+          + Add Option
+        </button>
+      </div>`;
+  } else if (type === 'yesno') {
+    el.innerHTML = `<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Voters will see <strong style="color:var(--text)">Yes</strong> and <strong style="color:var(--text)">No</strong> as the two options.</p>`;
+  } else if (type === 'schedule') {
+    el.innerHTML = `
+      <div class="form-group">
+        <label>Date / Time Slots</label>
+        <div class="options-list" id="optionsList">
+          <div class="option-row"><input type="datetime-local"><button class="icon-btn" onclick="removeOption(this)">×</button></div>
+          <div class="option-row"><input type="datetime-local"><button class="icon-btn" onclick="removeOption(this)">×</button></div>
+        </div>
+        <button class="icon-btn add" onclick="addScheduleOption()" style="width:auto;padding:0 14px;gap:6px;font-size:0.85rem">
+          + Add Time Slot
+        </button>
+      </div>`;
+  } else if (type === 'text') {
+    el.innerHTML = `<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:16px">Voters will type a free-text response. All responses are recorded.</p>`;
+  }
+}
+
+function addOption() {
+  const list = document.getElementById('optionsList');
+  const count = list.children.length + 1;
+  const row = document.createElement('div');
+  row.className = 'option-row';
+  row.innerHTML = `<input type="text" placeholder="Option ${count}"><button class="icon-btn" onclick="removeOption(this)">×</button>`;
+  list.appendChild(row);
+}
+
+function addScheduleOption() {
+  const list = document.getElementById('optionsList');
+  const row = document.createElement('div');
+  row.className = 'option-row';
+  row.innerHTML = `<input type="datetime-local"><button class="icon-btn" onclick="removeOption(this)">×</button>`;
+  list.appendChild(row);
+}
+
+function removeOption(btn) {
+  const list = document.getElementById('optionsList');
+  if (list.children.length <= 1) { showToast('Need at least one option.', 'info'); return; }
+  btn.closest('.option-row').remove();
+}
+
+function toggleDeadlineField() {
+  const show = document.getElementById('settingDeadline').checked;
+  document.getElementById('deadlineField').style.display = show ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════
+//  CREATE POLL
+// ══════════════════════════════════════════
+async function createPoll() {
+  const title = document.getElementById('pollTitle').value.trim();
+  const desc  = document.getElementById('pollDesc').value.trim();
+  const type  = document.getElementById('pollType').value;
+  const showResults = document.getElementById('settingShowResults').checked;
+  const requireName = document.getElementById('settingRequireName').checked;
+  const hasDeadline = document.getElementById('settingDeadline').checked;
+  const deadline    = hasDeadline ? document.getElementById('pollDeadline').value : null;
+
+  if (!title) { showToast('Please enter a poll title.', 'error'); return; }
+  if (!binId || !apiKey) { showToast('Configure JSONBin first.', 'error'); return; }
+
+  let options = [];
+  if (type === 'choice') {
+    const inputs = document.querySelectorAll('#optionsList input');
+    inputs.forEach(i => { if (i.value.trim()) options.push(i.value.trim()); });
+    if (options.length < 2) { showToast('Add at least 2 options.', 'error'); return; }
+  } else if (type === 'yesno') {
+    options = ['Yes', 'No'];
+  } else if (type === 'schedule') {
+    const inputs = document.querySelectorAll('#optionsList input');
+    inputs.forEach(i => { if (i.value) options.push(i.value); });
+    if (options.length < 1) { showToast('Add at least one time slot.', 'error'); return; }
+  }
+
+  const poll = {
+    id: 'p_' + Date.now(),
+    title, desc, type, options,
+    showResults, requireName, deadline,
+    createdAt: new Date().toISOString(),
+    status: 'active'
+  };
+
+  const data = await fetchDB();
+  const dbPolls = data?.polls || [];
+  const dbVotes = data?.votes || {};
+  dbPolls.unshift(poll);
+  dbVotes[poll.id] = [];
+
+  const ok = await updateDB({ polls: dbPolls, votes: dbVotes });
+  if (ok) {
+    polls = dbPolls;
+    votesDB = dbVotes;
+    renderPolls();
+    // Reset form
+    document.getElementById('pollTitle').value = '';
+    document.getElementById('pollDesc').value = '';
+    document.getElementById('settingDeadline').checked = false;
+    document.getElementById('deadlineField').style.display = 'none';
+    renderOptionFields();
+    showToast('Poll published! 🎉', 'success');
+  }
+}
+
+// ══════════════════════════════════════════
+//  RENDER POLLS
+// ══════════════════════════════════════════
+function renderPolls() {
+  const container = document.getElementById('pollsContainer');
+  if (!binId || !apiKey) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🗳️</div><p>Configure JSONBin above to start collecting votes.</p></div>`;
+    return;
+  }
+  if (!polls.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>No polls yet. ${isAdmin ? 'Create one above!' : 'Check back later.'}</p></div>`;
+    return;
+  }
+
+  const now = new Date();
+  container.innerHTML = '';
+  polls.forEach((poll, idx) => {
+    const isExpired = poll.deadline && new Date(poll.deadline) < now;
+    const votes = votesDB[poll.id] || [];
+    const totalVotes = votes.length;
+
+    let statusBadge = isExpired
+      ? `<span class="badge badge-closed">Closed</span>`
+      : `<span class="badge badge-active">Active</span>`;
+
+    let metaHtml = `
+      <span class="total-votes-chip">🗳 ${totalVotes} vote${totalVotes !== 1 ? 's' : ''}</span>
+      <span style="color:var(--text-dim)">•</span>
+      <span>${typeLabel(poll.type)}</span>`;
+
+    if (poll.deadline && !isExpired) {
+      metaHtml += `<span style="color:var(--text-dim)">•</span>
+        <span class="deadline-chip">⏰ Closes ${formatDate(poll.deadline)}</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'poll-card';
+    card.style.animationDelay = (idx * 0.06) + 's';
+    card.innerHTML = `
+      <div class="poll-card-top">
+        <div class="poll-card-title">${escHtml(poll.title)}</div>
+        ${statusBadge}
+      </div>
+      ${poll.desc ? `<p style="font-size:0.87rem;color:var(--text-muted);margin-bottom:10px;line-height:1.5">${escHtml(poll.desc)}</p>` : ''}
+      <div class="poll-card-meta">${metaHtml}</div>
+      ${isAdmin ? `
+        <div class="admin-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost" style="padding:6px 14px;font-size:0.8rem" onclick="viewResults('${poll.id}')">📊 Results</button>
+          <button class="btn btn-danger" style="padding:6px 14px;font-size:0.8rem" onclick="deletePoll('${poll.id}')">🗑 Delete</button>
+          <button class="btn btn-ghost" style="padding:6px 14px;font-size:0.8rem" onclick="exportResponses('${poll.id}')">⬇ Export</button>
+        </div>` : ''}`;
+
+    if (!isExpired) {
+      card.onclick = () => openVoteModal(poll.id);
+    }
+    container.appendChild(card);
+  });
+}
+
+function typeLabel(t) {
+  return { choice: 'Multiple Choice', yesno: 'Yes / No', schedule: 'Scheduling', text: 'Open Response' }[t] || t;
+}
+
+// ══════════════════════════════════════════
+//  VOTE MODAL
+// ══════════════════════════════════════════
+async function openVoteModal(pollId) {
+  const data = await fetchDB();
+  if (!data) return;
+  polls = data.polls || [];
+  votesDB = data.votes || {};
+
+  const poll = polls.find(p => p.id === pollId);
+  if (!poll) return;
+  currentPollId = pollId;
+
+  const alreadyVoted = hasVoted[pollId];
+  const isExpired = poll.deadline && new Date(poll.deadline) < new Date();
+
+  document.getElementById('voteOverlay').classList.add('open');
+  renderVoteModal(poll, alreadyVoted || isExpired);
+}
+
+function renderVoteModal(poll, showResultsOnly = false) {
+  const votes = votesDB[poll.id] || [];
+  const content = document.getElementById('voteModalContent');
+
+  let nameSection = '';
+  if (!showResultsOnly && poll.requireName && currentVoterName) {
+    nameSection = `<div class="voter-tag" onclick="changeName()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+      Voting as ${escHtml(currentVoterName)} <span style="opacity:0.6">(change)</span>
+    </div>`;
+  }
+
+  let body = '';
+
+  if (showResultsOnly) {
+    body = renderResults(poll, votes);
+  } else if (poll.type === 'text') {
+    body = `
+      ${nameSection}
+      ${!poll.requireName || currentVoterName ? `
+        <div class="form-group">
+          <label>Your Response</label>
+          <textarea id="textResponse" placeholder="Type your answer here…" style="min-height:120px"></textarea>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="submitVote()">Submit Response</button>
+      ` : renderNameInput()}`;
+  } else {
+    const optionsHtml = (poll.type === 'schedule'
+      ? poll.options.map(o => formatDateTime(o))
+      : poll.options
+    ).map((opt, i) => `
+      <div class="vote-option" onclick="selectOption(this)" data-idx="${i}">
+        <div class="vote-option-radio"></div>
+        <span class="vote-option-label">${escHtml(opt)}</span>
+      </div>`).join('');
+
+    body = `
+      ${nameSection}
+      ${!poll.requireName || currentVoterName ? `
+        <div class="form-group">${optionsHtml}</div>
+        <button class="btn btn-primary btn-full" onclick="submitVote()">Cast Vote</button>
+      ` : renderNameInput()}`;
+  }
+
+  content.innerHTML = `
+    <div class="modal-title">${escHtml(poll.title)}</div>
+    ${poll.desc ? `<div class="modal-desc">${escHtml(poll.desc)}</div>` : ''}
+    ${poll.showResults && votes.length ? `<p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">🗳 ${votes.length} vote${votes.length!==1?'s':''} so far</p>` : ''}
+    ${body}
+    ${poll.showResults && !showResultsOnly && votes.length ? `<div style="margin-top:24px"><div class="divider"></div>${renderResults(poll, votes)}</div>` : ''}
+  `;
+}
+
+function renderNameInput() {
+  return `
+    <p style="font-size:0.87rem;color:var(--text-muted);margin-bottom:12px">Enter your name to continue:</p>
+    <div class="name-row">
+      <input type="text" id="voterNameInput" placeholder="Your name…"
+        onkeydown="if(event.key==='Enter')setVoterName()">
+      <button class="btn btn-primary" onclick="setVoterName()">Continue</button>
+    </div>`;
+}
+
+function setVoterName() {
+  const val = document.getElementById('voterNameInput')?.value.trim();
+  if (!val) { showToast('Please enter your name.', 'error'); return; }
+  currentVoterName = val;
+  localStorage.setItem('vl_voter_name', val);
+  const poll = polls.find(p => p.id === currentPollId);
+  if (poll) renderVoteModal(poll);
+}
+
+function changeName() {
+  currentVoterName = '';
+  localStorage.removeItem('vl_voter_name');
+  const poll = polls.find(p => p.id === currentPollId);
+  if (poll) renderVoteModal(poll);
+}
+
+function selectOption(el) {
+  document.querySelectorAll('.vote-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function submitVote() {
+  const poll = polls.find(p => p.id === currentPollId);
+  if (!poll) return;
+
+  let answer;
+  if (poll.type === 'text') {
+    answer = document.getElementById('textResponse')?.value.trim();
+    if (!answer) { showToast('Please write a response.', 'error'); return; }
+  } else {
+    const selected = document.querySelector('.vote-option.selected');
+    if (!selected) { showToast('Please select an option.', 'error'); return; }
+    const idx = parseInt(selected.dataset.idx);
+    answer = poll.options[idx];
+  }
+
+  const vote = {
+    pollId: currentPollId,
+    answer,
+    name: currentVoterName || 'Anonymous',
+    timestamp: new Date().toISOString()
+  };
+
+  const data = await fetchDB();
+  if (!data) return;
+
+  const db = { polls: data.polls || polls, votes: data.votes || votesDB };
+  if (!db.votes[currentPollId]) db.votes[currentPollId] = [];
+  db.votes[currentPollId].push(vote);
+
+  const ok = await updateDB(db);
+  if (ok) {
+    polls = db.polls;
+    votesDB = db.votes;
+    hasVoted[currentPollId] = true;
+    showToast('Vote recorded! Thanks 🎉', 'success');
+    renderVoteModal(poll, poll.showResults);
+    renderPolls();
+  }
+}
+
+function renderResults(poll, votes) {
+  if (!votes.length) return `<p style="color:var(--text-muted);font-size:0.87rem;text-align:center;padding:16px">No votes yet.</p>`;
+
+  if (poll.type === 'text') {
+    const items = votes.map(v => `
+      <div style="padding:10px 14px;background:var(--surface2);border-radius:var(--radius);margin-bottom:8px;font-size:0.87rem">
+        <span style="color:var(--text-muted);font-size:0.75rem">${escHtml(v.name)} · ${formatDate(v.timestamp)}</span><br>
+        ${escHtml(v.answer)}
+      </div>`).join('');
+    return `<div style="margin-top:8px"><p style="font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">Responses (${votes.length})</p>${items}</div>`;
+  }
+
+  const counts = {};
+  poll.options.forEach(o => counts[o] = 0);
+  votes.forEach(v => { if (counts[v.answer] !== undefined) counts[v.answer]++; });
+  const total = votes.length || 1;
+
+  const bars = poll.options.map(opt => {
+    const c = counts[opt] || 0;
+    const pct = Math.round((c / total) * 100);
+    const label = poll.type === 'schedule' ? formatDateTime(opt) : escHtml(opt);
+    return `
+      <div class="result-item">
+        <div class="result-label">
+          <span>${label}</span>
+          <span class="result-pct">${pct}%</span>
+        </div>
+        <div class="result-bar-bg">
+          <div class="result-bar-fill" style="width:${pct}%"></div>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:3px">${c} vote${c!==1?'s':''}</div>
+      </div>`;
+  }).join('');
+
+  return `<div style="margin-top:8px"><p style="font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px">Live Results</p>${bars}</div>`;
+}
+
+function viewResults(pollId) {
+  const poll = polls.find(p => p.id === pollId);
+  if (!poll) return;
+  currentPollId = pollId;
+  document.getElementById('voteOverlay').classList.add('open');
+  const votes = votesDB[pollId] || [];
+  const content = document.getElementById('voteModalContent');
+  content.innerHTML = `
+    <div class="modal-title">${escHtml(poll.title)}</div>
+    <div class="modal-desc">Admin view · ${votes.length} total response${votes.length!==1?'s':''}</div>
+    ${renderResults(poll, votes)}
+    ${poll.type !== 'text' ? `
+      <div class="divider"></div>
+      <p style="font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">Individual Votes</p>
+      ${votes.map(v => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.83rem">
+        <span>${escHtml(v.name)}</span>
+        <span style="color:var(--accent)">${escHtml(v.answer)}</span>
+        <span style="color:var(--text-muted)">${formatDate(v.timestamp)}</span>
+      </div>`).join('') || '<p style="color:var(--text-muted);font-size:0.85rem">No votes yet.</p>'}
+    ` : ''}`;
+}
+
+async function deletePoll(pollId) {
+  if (!confirm('Delete this poll and all its responses?')) return;
+  const data = await fetchDB();
+  if (!data) return;
+  data.polls = (data.polls || []).filter(p => p.id !== pollId);
+  delete data.votes[pollId];
+  const ok = await updateDB(data);
+  if (ok) {
+    polls = data.polls;
+    votesDB = data.votes;
+    renderPolls();
+    showToast('Poll deleted.', 'info');
+  }
+}
+
+function exportResponses(pollId) {
+  const poll = polls.find(p => p.id === pollId);
+  const votes = votesDB[pollId] || [];
+  if (!votes.length) { showToast('No responses to export.', 'info'); return; }
+
+  const csv = ['Name,Answer,Timestamp',
+    ...votes.map(v => `"${v.name}","${v.answer}","${v.timestamp}"`)
+  ].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${poll.title.replace(/[^a-z0-9]/gi,'_')}_responses.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported to CSV!', 'success');
+}
+
+// ══════════════════════════════════════════
+//  MODAL CONTROLS
+// ══════════════════════════════════════════
+function closeVoteModal() {
+  document.getElementById('voteOverlay').classList.remove('open');
+  currentPollId = null;
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('voteOverlay')) closeVoteModal();
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  return new Date(str).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function formatDateTime(str) {
+  if (!str) return str;
+  try {
+    return new Date(str).toLocaleDateString('en-GB', {
+      weekday:'short', day:'numeric', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+  } catch(e) { return str; }
+}
+</script>
+</body>
+</html>
