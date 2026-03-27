@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord DMs Index</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #dcddde;
+            min-height: 100vh;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(54, 57, 62, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            line-height: 1.2;
+        }
+        #search {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 30px;
+            font-size: 18px;
+            border: 2px solid #202225;
+            border-radius: 10px;
+            background-color: #2f3136;
+            color: #dcddde;
+            transition: all 0.3s ease;
+            line-height: 1.4;
+        }
+        #search:focus {
+            outline: none;
+            border-color: #00aff4;
+            box-shadow: 0 0 10px rgba(0, 175, 244, 0.5);
+        }
+        #dm-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #dm-list li {
+            background-color: #2f3136;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #dm-list li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        #dm-list a {
+            display: block;
+            padding: 20px;
+            color: #43b581;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            transition: color 0.3s ease, background-color 0.3s ease;
+            line-height: 1.4;
+        }
+        #dm-list a:hover {
+            color: #ffffff;
+            background-color: rgba(67, 181, 129, 0.18);
+        }
+        #results li {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #272b30;
+            border-radius: 8px;
+            border-left: 4px solid #43b581;
+            transition: background-color 0.3s ease;
+        }
+        #results li:hover {
+            background-color: #2f363d;
+        }
+        #results {
+            margin-top: 30px;
+            background-color: #2f3136;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #results h2 {
+            color: #ffffff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        #results ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #results ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 12px;
+        }
+        #results li {
+            margin: 0;
+            padding: 0;
+            background: none;
+            border: none;
+        }
+        .result-card {
+            background-color: #1f2328;
+            border: 1px solid #2e3340;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+        }
+        .result-link {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            text-decoration: none;
+            color: inherit;
+            padding: 12px;
+        }
+        .result-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #2c3340;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .result-text {
+            min-width: 0;
+            width: 100%;
+        }
+        .result-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #b9bbbe;
+        }
+        .result-author {
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .result-timestamp,
+        .result-file {
+            font-weight: 500;
+            color: #8b96a8;
+        }
+        .result-message {
+            font-size: 0.95rem;
+            color: #d7dbdf;
+            line-height: 1.45;
+        }
+        .result-message mark {
+            background-color: #ffe29e;
+            color: #1b1e24;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        mark {
+            background-color: #faa61a;
+            color: #000;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .update-note {
+            text-align: center;
+            margin-top: 30px;
+            font-style: italic;
+            color: #b9bbbe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Discord Direct Messages</h1>
+        <div id="loading" style="text-align: center; color: #b9bbbe; margin-bottom: 20px;">Loading messages from all files...</div>
+        <div id="filters" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+            <input type="text" id="search" placeholder="Search for keywords in messages...">
+            <select id="file-filter" aria-label="Filter by file">
+                <option value="all">All files</option>
+            </select>
+            <input type="text" id="author-filter" placeholder="Filter by author">
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <label for="max-results" style="color: #b9bbbe; white-space: nowrap;">Max results:</label>
+            <input id="max-results" type="number" min="10" max="500" value="200" style="width: 100px; padding: 8px; border-radius: 6px; border: 1px solid #202225; background: #2f3136; color: #dcddde;">
+        </div>
+        <ul id="dm-list">
+        <li><a href="Direct Messages - Baby gang (protected from bullying) [1317591717574344827].html">Direct Messages - Baby gang (protected from bullying)</a></li>
+        <li><a href="Direct Messages - Duck🦆 [1331721148156743681].html">Direct Messages - Duck🦆</a></li>
+        <li><a href="Direct Messages - Duck🦆 [1432703251123404953].html">Direct Messages - Duck🦆</a></li>
+        <li><a href="Direct Messages - Floppa [1332380021020561418].html">Direct Messages - Floppa</a></li>
+        <li><a href="Direct Messages - Floppa [1332434120755773621].html">Direct Messages - Floppa</a></li>
+        <li><a href="Direct Messages - Is mayonnaise an instrument_ [1405655686058082387].html">Direct Messages - Is mayonnaise an instrument_</a></li>
+        <li><a href="Direct Messages - Jeffry longbottom [1407395150971277385].html">Direct Messages - Jeffry longbottom</a></li>
+        <li><a href="Direct Messages - Maxifly66 [1296096754802102353].html">Direct Messages - Maxifly66</a></li>
+        <li><a href="Direct Messages - PPDOOKIETHUMMUNCHERLEKATOLIOSTHEDUCKIEKING13(AKA EGG)HESPALCOZYTOEMUNCKERPOOPHESOEGG!!! [1452054688475123712].html">Direct Messages - PPDOOKIETHUMMUNCHERLEKATOLIOSTHEDUCKIEKING13(AKA EGG)HESPALCOZYTOEMUNCKERPOOPHESOEGG!!!</a></li>
+        <li><a href="Direct Messages - The Simpletons [1417226779973779516].html">Direct Messages - The Simpletons</a></li>
+        <li><a href="Direct Messages - Thezac [1470874699792650405].html">Direct Messages - Thezac</a></li>
+        <li><a href="Direct Messages - Towle [1351300041092104203].html">Direct Messages - Towle</a></li>
+        <li><a href="Direct Messages - geg [1422271573263384619].html">Direct Messages - geg</a></li>
+        <li><a href="Direct Messages - poopybum 2 [1454235548091809934].html">Direct Messages - poopybum 2</a></li>
+        <li><a href="Direct Messages - sillycoatcat [1256562876248756244].html">Direct Messages - sillycoatcat</a></li>
+        <li><a href="Direct Messages - sillycoatcat [1305228945230266510].html">Direct Messages - sillycoatcat</a></li>
+        <li><a href="TESTING YAYA - Text Channels - bot-playground [1484573883255361657].html">TESTING YAYA - Text Channels - bot-playground</a></li>
+        <li><a href="the i dond fucking know gang - Tekstikanavat - sillycoatcat-sandbox-place [1484547456007012443].html">the i dond fucking know gang - Tekstikanavat - sillycoatcat-sandbox-place</a></li>
+    </ul>
+        <div id="results" style="display: none;"></div>
+        <p class="update-note">To add new files, run <code>python update_mainpage.py</code> in this folder.</p>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const dmList = document.getElementById('dm-list');
+        const loadingDiv = document.getElementById('loading');
+        const resultsDiv = document.getElementById('results');
+        const fileFilter = document.getElementById('file-filter');
+        const authorFilter = document.getElementById('author-filter');
+        const maxResultsInput = document.getElementById('max-results');
+
+        const dmFiles = [
+            {name: 'Direct Messages - Baby gang (protected from bullying) [1317591717574344827].html', display: 'Direct Messages - Baby gang (protected from bullying)'},
+            {name: 'Direct Messages - Duck🦆 [1331721148156743681].html', display: 'Direct Messages - Duck🦆'},
+            {name: 'Direct Messages - Duck🦆 [1432703251123404953].html', display: 'Direct Messages - Duck🦆'},
+            {name: 'Direct Messages - Floppa [1332380021020561418].html', display: 'Direct Messages - Floppa'},
+            {name: 'Direct Messages - Floppa [1332434120755773621].html', display: 'Direct Messages - Floppa'},
+            {name: 'Direct Messages - Is mayonnaise an instrument_ [1405655686058082387].html', display: 'Direct Messages - Is mayonnaise an instrument_'},
+            {name: 'Direct Messages - Jeffry longbottom [1407395150971277385].html', display: 'Direct Messages - Jeffry longbottom'},
+            {name: 'Direct Messages - Maxifly66 [1296096754802102353].html', display: 'Direct Messages - Maxifly66'},
+            {name: 'Direct Messages - PPDOOKIETHUMMUNCHERLEKATOLIOSTHEDUCKIEKING13(AKA EGG)HESPALCOZYTOEMUNCKERPOOPHESOEGG!!! [1452054688475123712].html', display: 'Direct Messages - PPDOOKIETHUMMUNCHERLEKATOLIOSTHEDUCKIEKING13(AKA EGG)HESPALCOZYTOEMUNCKERPOOPHESOEGG!!!'},
+            {name: 'Direct Messages - The Simpletons [1417226779973779516].html', display: 'Direct Messages - The Simpletons'},
+            {name: 'Direct Messages - Thezac [1470874699792650405].html', display: 'Direct Messages - Thezac'},
+            {name: 'Direct Messages - Towle [1351300041092104203].html', display: 'Direct Messages - Towle'},
+            {name: 'Direct Messages - geg [1422271573263384619].html', display: 'Direct Messages - geg'},
+            {name: 'Direct Messages - poopybum 2 [1454235548091809934].html', display: 'Direct Messages - poopybum 2'},
+            {name: 'Direct Messages - sillycoatcat [1256562876248756244].html', display: 'Direct Messages - sillycoatcat'},
+            {name: 'Direct Messages - sillycoatcat [1305228945230266510].html', display: 'Direct Messages - sillycoatcat'},
+            {name: 'TESTING YAYA - Text Channels - bot-playground [1484573883255361657].html', display: 'TESTING YAYA - Text Channels - bot-playground'},
+            {name: 'the i dond fucking know gang - Tekstikanavat - sillycoatcat-sandbox-place [1484547456007012443].html', display: 'the i dond fucking know gang - Tekstikanavat - sillycoatcat-sandbox-place'}
+        ];
+
+        let allMessages = [];
+
+        function updateFileFilter() {
+            const sorted = [...new Set(dmFiles.map(d => d.display))].sort();
+            fileFilter.innerHTML = '<option value="all">All files</option>' + sorted.map(name => `<option value="${name}">${name}</option>`).join('');
+        }
+
+        function loadFile(file) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', file, true);
+                xhr.onload = () => {
+                    if (xhr.status === 200) {
+                        resolve(xhr.responseText);
+                    } else {
+                        reject(new Error(`Failed to load ${file}`));
+                    }
+                };
+                xhr.onerror = () => reject(new Error(`Network error for ${file}`));
+                xhr.send();
+            });
+        }
+
+        async function loadMessages() {
+            updateFileFilter();
+
+            for (const file of dmFiles) {
+                try {
+                    const text = await loadFile(file.name);
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const containers = doc.querySelectorAll('.chatlog__message-container');
+                    containers.forEach(container => {
+                        const id = container.id;
+                        const authorEl = container.querySelector('.chatlog__author') || container.querySelector('.chatlog__system-notification-author');
+                        const author = authorEl ? authorEl.textContent : 'System';
+                        const avatarEl = container.querySelector('.chatlog__avatar');
+                        const avatar = avatarEl ? avatarEl.src : 'https://cdn.discordapp.com/embed/avatars/0.png';
+                        const timestampEl = container.querySelector('.chatlog__timestamp a');
+                        const timestamp = timestampEl ? timestampEl.textContent : '';
+                        const contentEl = container.querySelector('.chatlog__content');
+                        const content = contentEl ? contentEl.textContent : '';
+                        allMessages.push({file: file.name, display: file.display, id, author, avatar, timestamp, content});
+                    });
+                } catch (e) {
+                    console.error('Error loading ' + file.name, e);
+                }
+            }
+
+            loadingDiv.style.display = 'none';
+        }
+
+        function runSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            const selectedFile = fileFilter.value;
+            const authorTerm = authorFilter.value.toLowerCase().trim();
+            const maxResults = Math.min(Math.max(parseInt(maxResultsInput.value) || 200, 1), 1000);
+
+            if (query === '' && selectedFile === 'all' && authorTerm === '') {
+                dmList.style.display = '';
+                resultsDiv.style.display = 'none';
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            const filtered = allMessages.filter(msg => {
+                const matchesQuery = query === '' || msg.content.toLowerCase().includes(query) || msg.author.toLowerCase().includes(query) || msg.display.toLowerCase().includes(query);
+                const matchesFile = selectedFile === 'all' || msg.display === selectedFile;
+                const matchesAuthor = authorTerm === '' || msg.author.toLowerCase().includes(authorTerm);
+                return matchesQuery && matchesFile && matchesAuthor;
+            });
+
+            const matches = filtered.slice(0, maxResults);
+            dmList.style.display = 'none';
+            resultsDiv.style.display = '';
+            resultsDiv.innerHTML = `<h2>Search Results (${filtered.length} found, showing ${matches.length})</h2><ul></ul>`;
+
+            const ul = resultsDiv.querySelector('ul');
+            if (matches.length === 0) {
+                resultsDiv.innerHTML = `<h2>Search Results (0 found)</h2><p>No messages match your filters.</p>`;
+                return;
+            }
+            matches.forEach(match => {
+                const li = document.createElement('li');
+                li.className = 'result-card';
+                const sanitizedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const highlightedContent = match.content.replace(new RegExp(`(${sanitizedQuery})`, 'gi'), '<mark>$1</mark>');
+                const snippet = highlightedContent.length > 260 ? highlightedContent.substring(0, 260) + '...' : highlightedContent;
+                li.innerHTML = `
+                    <a href="${match.file}#${match.id}" class="result-link">
+                        <img src="${match.avatar}" class="result-avatar" alt="${match.author} avatar" loading="lazy">
+                        <div class="result-text">
+                            <div class="result-meta">
+                                <span class="result-author">${match.author}</span>
+                                <span class="result-timestamp">${match.timestamp || 'No timestamp'}</span>
+                                <span class="result-file">${match.display}</span>
+                            </div>
+                            <div class="result-message">${snippet || '<em>(no text content)</em>'}</div>
+                        </div>
+                    </a>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        searchInput.addEventListener('input', runSearch);
+        fileFilter.addEventListener('change', runSearch);
+        authorFilter.addEventListener('input', runSearch);
+        maxResultsInput.addEventListener('input', runSearch);
+
+        document.addEventListener('DOMContentLoaded', loadMessages);
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">c:\Users\Connor\Documents\BabyGang Files\MainPage.html
